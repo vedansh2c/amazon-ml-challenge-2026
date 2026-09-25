@@ -1,0 +1,13 @@
+# Local datasets and generated artifacts
+/data/*
+!/data/.gitkeep
+/outputs/*
+!/outputs/.gitkeep
+
+# Python and notebook files generated locally
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ipynb_checkpoints/
+.DS_Store

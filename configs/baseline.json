@@ -1,0 +1,11 @@
+{
+  "pipeline": "baseline",
+  "mode": "all",
+  "dataset": "data/raw/student_resource/dataset",
+  "output": "outputs/baseline",
+  "sample_divisor": 100,
+  "per_key": 30,
+  "final_limit": 50,
+  "workers": 4,
+  "device": "auto"
+}
