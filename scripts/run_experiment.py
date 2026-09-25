@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run an experiment from a JSON configuration file."""
+"""Train and validate the configured entity matching model."""
 
 from __future__ import annotations
 
@@ -12,13 +12,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.pipelines.baseline import predict, train  # noqa: E402
-
-
-def path_from_config(value: str) -> Path:
-    path = Path(value).expanduser()
-    return path if path.is_absolute() else ROOT / path
-
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -27,26 +20,22 @@ def main() -> None:
     config_path = args.config if args.config.is_absolute() else ROOT / args.config
     config = json.loads(config_path.read_text())
     if config.get("pipeline") != "baseline":
-        raise ValueError("This runner currently supports pipeline='baseline'. Add new pipeline dispatch here.")
-    mode = config.get("mode", "all")
-    if mode not in {"train", "predict", "all"}:
-        raise ValueError("mode must be train, predict, or all")
-    dataset = path_from_config(config.get("dataset", "data/raw/student_resource/dataset"))
-    output = path_from_config(config.get("output", "outputs/experiment"))
+        parser.error("config pipeline must be 'baseline'")
+    dataset_value = Path(config.get("dataset", "data/raw/student_resource/dataset")).expanduser()
+    output_value = Path(config.get("output", "outputs/baseline")).expanduser()
+    dataset = dataset_value if dataset_value.is_absolute() else ROOT / dataset_value
+    output = output_value if output_value.is_absolute() else ROOT / output_value
     sample_divisor = int(config.get("sample_divisor", 100))
     per_key = int(config.get("per_key", 30))
     final_limit = int(config.get("final_limit", 50))
-    workers = int(config.get("workers", 4))
     device = str(config.get("device", "auto")).lower()
-    if min(sample_divisor, per_key, final_limit, workers) < 1:
-        raise ValueError("numeric experiment settings must be positive")
+    if min(sample_divisor, per_key, final_limit) < 1:
+        parser.error("sample_divisor, per_key, and final_limit must be positive")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    if mode in {"train", "all"}:
-        train(dataset, output, sample_divisor=sample_divisor,
-              per_key=per_key, final_limit=final_limit, device=device)
-    if mode in {"predict", "all"}:
-        predict(dataset, output, per_key=per_key,
-                final_limit=final_limit, workers=workers)
+    from src.pipelines.baseline import train
+
+    train(dataset, output, sample_divisor=sample_divisor, per_key=per_key,
+          final_limit=final_limit, device=device)
 
 
 if __name__ == "__main__":
